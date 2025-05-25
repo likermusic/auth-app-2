@@ -14,4 +14,10 @@ app.get("/", (req, resp) => {
   });
 });
 
+app.post("/signin", (req, resp) => {
+  console.log(req.body);
+
+  resp.json("Signin success");
+});
+
 app.listen(4000, () => console.log("Server started"));
