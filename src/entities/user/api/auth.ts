@@ -5,6 +5,6 @@ import { ROUTES } from "@/shared/api/constants";
 interface IUserRequest extends Pick<IUser, "email" | "password"> {}
 
 export const authApi = {
-  signin: (data: IUserRequest) => api.post(ROUTES.SIGNIN, data),
-  signup: (data: IUserRequest) => api.post(ROUTES.SIGNUP, data),
+  signin: (data: IUserRequest) => api.post<string>(ROUTES.SIGNIN, data),
+  signup: (data: IUserRequest) => api.post<string>(ROUTES.SIGNUP, data),
 };
