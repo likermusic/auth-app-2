@@ -40,7 +40,7 @@ const FormSchema = z.object({
     .regex(/[0-9]/, "Password must contain numeric characters."),
 });
 
-export const SigninForm = () => {
+export const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -65,11 +65,7 @@ export const SigninForm = () => {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Email"
-                    {...field}
-                    className="relative text-white"
-                  />
+                  <Input placeholder="Email" {...field} className="relative" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -87,7 +83,6 @@ export const SigninForm = () => {
                       placeholder="Password"
                       {...field}
                       type={showPassword ? "text" : "password"}
-                      className="text-white"
                     />
                     <button
                       type="button"
@@ -107,7 +102,7 @@ export const SigninForm = () => {
             )}
           />
           <Button className="border border-zinc-500 rounded-xl" type="submit">
-            Sign in
+            Sign up
           </Button>
         </form>
       </Form>
