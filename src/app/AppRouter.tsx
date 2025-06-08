@@ -7,7 +7,6 @@ import { AppLayout } from "./AppLayout";
 
 const router = createBrowserRouter([
   {
-    // path: ROUTES.HOME,
     element: <AppLayout />,
     children: [
       {
