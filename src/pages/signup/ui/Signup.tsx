@@ -1,13 +1,7 @@
 import { SignupForm } from "@/features/auth";
+import { FormPageLayout } from "@/shared/ui/layouts/FormPageLayout";
 import React from "react";
 
 export const Signup = () => {
-  return (
-    <div className="min-h-screen flex justify-center items-center bg-black">
-      <main className="rounded-xl border border-zinc-500 bg-blue-200/10 px-14 py-8 pb-14 max-w-[400px]">
-        <h1 className="text-4xl mb-6 text-white">Sign up</h1>
-        <SignupForm />
-      </main>
-    </div>
-  );
+  return <FormPageLayout title="Sign up" form={<SignupForm />} />;
 };
