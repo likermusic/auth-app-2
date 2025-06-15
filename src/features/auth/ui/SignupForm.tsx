@@ -6,6 +6,10 @@ export const SignupForm = () => {
   };
 
   return (
-    <FormLayout title="Sign up" onSubmit={signupHandler} confirmField={true} />
+    <FormLayout
+      buttonTitle="Sign up"
+      onSubmit={signupHandler}
+      confirmField={true}
+    />
   );
 };

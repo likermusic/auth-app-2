@@ -69,7 +69,7 @@ interface FormLayoutProps {
 type FormData = z.infer<typeof FormSchema>;
 
 export const FormLayout = ({
-  title,
+  buttonTitle,
   onSubmit,
   confirmField,
 }: FormLayoutProps) => {
@@ -77,6 +77,12 @@ export const FormLayout = ({
     resolver: zodResolver(FormSchema),
     mode: "onChange",
   });
+
+  const {
+    watch,
+    formState: { errors, isValid },
+  } = form;
+  const isPasswordValid = !errors.password && watch("password");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -141,7 +147,7 @@ export const FormLayout = ({
               </FormItem>
             )}
           />
-          {confirmField && (
+          {confirmField && isPasswordValid && (
             <FormField
               control={form.control}
               name="confirmPassword"
@@ -183,7 +189,7 @@ export const FormLayout = ({
             className="w-full bg-[#2859FE] py-6 cursor-pointer hover:bg-[#1642d3]"
             type="submit"
           >
-            {title}
+            {buttonTitle}
           </Button>
         </form>
       </Form>
