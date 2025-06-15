@@ -12,9 +12,9 @@ export const Signin = () => {
   //     console.log(error.response?.data.error);
   //   });
   return (
-    <div className="min-h-screen bg-black flex justify-center items-center">
-      <main className="border border-zinc-500 rounded-xl bg-blue-200/10 px-8 pt-8 pb-14 min-w-[300px]">
-        <h1 className="text-4xl text-white">Sign in</h1>
+    <div className="min-h-screen flex justify-center items-center bg-black">
+      <main className="rounded-xl border border-zinc-500 bg-blue-200/10 px-14 py-8 pb-14 max-w-[400px]">
+        <h1 className="text-4xl mb-6 text-white">Sign in</h1>
         <SigninForm />
       </main>
     </div>
