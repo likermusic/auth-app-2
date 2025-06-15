@@ -1,3 +1,4 @@
+import { authApi } from "@/entities/user/api/auth";
 import { SignupForm } from "@/features/auth";
 import { FormPageLayout } from "@/shared/ui/layouts/FormPageLayout";
 import React from "react";

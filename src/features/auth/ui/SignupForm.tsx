@@ -1,8 +1,9 @@
+import { useSignup } from "../model/useSignup";
 import { FormLayout } from "./layouts/FormLayout";
 
 export const SignupForm = () => {
   const signupHandler = (data: FormData) => {
-    console.log("signupHandler");
+    useSignup();
   };
 
   return (
