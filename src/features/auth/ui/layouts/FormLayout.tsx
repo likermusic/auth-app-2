@@ -19,6 +19,7 @@ import type {
   SigninFormSchema,
   SignupFormSchema,
 } from "../../model/formSchema";
+import { Toaster } from "sonner";
 
 interface FormLayoutProps {
   buttonTitle: string;
@@ -62,6 +63,7 @@ export const FormLayout = ({
   return (
     <div>
       <Form {...form}>
+        <Toaster />
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-5">
           <FormField
             control={form.control}
