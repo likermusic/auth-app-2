@@ -15,6 +15,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Link } from "react-router-dom";
 
 const emailMin = 6;
 const passwordMin = 4;
@@ -64,6 +65,10 @@ interface FormLayoutProps {
   title: string;
   onSubmit: (data: FormData) => void;
   confirmField?: boolean;
+  link: {
+    to: string;
+    title: string;
+  };
 }
 
 type FormData = z.infer<typeof FormSchema>;
@@ -72,6 +77,7 @@ export const FormLayout = ({
   buttonTitle,
   onSubmit,
   confirmField,
+  link,
 }: FormLayoutProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -192,6 +198,9 @@ export const FormLayout = ({
             {buttonTitle}
           </Button>
         </form>
+        <Button variant={"link"} className="text-[#5a7ef5] block m-auto">
+          <Link to={link.to}>{link.title}</Link>
+        </Button>
       </Form>
     </div>
   );
