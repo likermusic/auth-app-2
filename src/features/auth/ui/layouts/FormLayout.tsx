@@ -2,6 +2,7 @@ import { Button } from "@/shared/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -12,38 +13,75 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 
-import { z, type TypeOf } from "zod";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
-import { type SigninFormData } from "../../types";
-import { ROUTES } from "@/shared/router/constants";
 
-interface FormLayoutProps<T extends z.ZodType<any, any>> {
-  buttonTitle: string;
-  onSubmit: (data: TypeOf<T>) => Promise<void>;
+const emailMin = 6;
+const passwordMin = 4;
+const passwordMax = 20;
+
+const FormSchema = z
+  .object({
+    email: z
+      .string()
+      .email()
+      .min(emailMin, `Email must be at least ${emailMin} characters.`),
+    password: z
+      .string()
+      .min(
+        passwordMin,
+        `Password must not be less than ${passwordMin} characters.`,
+      )
+      .max(
+        passwordMax,
+        `Password must not be more than ${passwordMax} characters.`,
+      )
+      .regex(/[A-Z]/, "Password must contain capital characters.")
+      .regex(/[a-z]/, "Password must contain small characters.")
+      .regex(/[0-9]/, "Password must contain numeric characters."),
+
+    confirmPassword: z
+      .string()
+      .min(
+        passwordMin,
+        `Password must not be less than ${passwordMin} characters.`,
+      )
+      .max(
+        passwordMax,
+        `Password must not be more than ${passwordMax} characters.`,
+      )
+      .regex(/[A-Z]/, "Password must contain capital characters.")
+      .regex(/[a-z]/, "Password must contain small characters.")
+      .regex(/[0-9]/, "Password must contain numeric characters.")
+      .optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+interface FormLayoutProps {
+  title: string;
+  onSubmit: (data: FormData) => void;
   confirmField?: boolean;
   link: {
     to: string;
     title: string;
   };
-  schema: T;
 }
 
-export const FormLayout = <T extends z.ZodType<any, any>>({
+type FormData = z.infer<typeof FormSchema>;
+
+export const FormLayout = ({
   buttonTitle,
   onSubmit,
   confirmField,
   link,
-  schema,
-}: FormLayoutProps<T>) => {
-  const form = useForm<z.infer<T>>({
-    resolver: zodResolver(schema),
+}: FormLayoutProps) => {
+  const form = useForm<FormData>({
+    resolver: zodResolver(FormSchema),
     mode: "onChange",
-    defaultValues: {
-      ...((confirmField
-        ? { email: "", password: "", confirmPassword: "" }
-        : { email: "", password: "" }) as TypeOf<T>),
-    },
   });
 
   const {
