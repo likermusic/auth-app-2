@@ -24,7 +24,7 @@ app.post("/signin", (req, resp) => {
   }
   const { email, password } = req.body;
   const users = [
-    { email: "admin@mail.ru", password: "Pdsd676" },
+    { email: "admin@mail.ru", password: "1234" },
     { email: "user@mail.ru", password: "1234" },
   ];
   const user = users.find(
