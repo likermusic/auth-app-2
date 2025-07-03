@@ -14,44 +14,40 @@ export const useSignup = () => {
     try {
       // throw new Error();
       const resp = await authApi.signup(data);
+
       if (!resp.data.token) throw new Error("Token not found");
       Cookies.default.set("token", resp.data.token, {
         expires: 1 / 24,
       });
       // navigate(ROUTES.HOME);
-    } catch (error) {
-      
-      // console.log(error as AxiosError<{ error: string }>.er);
-      // return;
-      if (error instanceof AxiosError) {
-        error as AxiosError<{ error: string }>;
-        const errorsArray = Object.entries(error.response?.data.error);
-        // console.log(res);
-        // const errorMes = errorsArray.map(
-        //   (err) =>
-        //     `<b>${err[0]}: </b> ${err[1].map((innerErr) => `<span>${innerErr}</span><br>`)} <br>`,
-        // );
+    } catch (err) {
+      const error = err as AxiosError<{ error: string }>;
 
-        // const errorMes = errorsArray.map(
-        //   (err) =>
-        //     `${err[0]}: ${err[1].map((innerErr) => `${innerErr} \n`)} \n`,
-        // );
-        // console.log(errorMes);
+      // const errorsArray = Object.entries(error.response?.data.error);
+      // console.log(res);
+      // const errorMes = errorsArray.map(
+      //   (err) =>
+      //     `<b>${err[0]}: </b> ${err[1].map((innerErr) => `<span>${innerErr}</span><br>`)} <br>`,
+      // );
 
-        const errorMessage = errorsArray
-          .map(([field, messages]) => {
-            // messages может быть массивом или строкой
-            const msgText = Array.isArray(messages)
-              ? messages.join(", ")
-              : messages;
-            return `${field}: ${msgText}`;
-          })
-          .join(" | "); // Можно выбрать любой разделитель
+      // const errorMes = errorsArray.map(
+      //   (err) =>
+      //     `${err[0]}: ${err[1].map((innerErr) => `${innerErr} \n`)} \n`,
+      // );
+      // console.log(errorMes);
 
-        toast.error(errorMessage);
-      }
+      const errorMessage = errorsArray
+        .map(([field, messages]) => {
+          // messages может быть массивом или строкой
+          const msgText = Array.isArray(messages)
+            ? messages.join(", ")
+            : messages;
+          return `${field}: ${msgText}`;
+        })
+        .join(" | "); // Можно выбрать любой разделитель
+
+      toast.error(errorMessage);
     }
   };
-
   return { signupHandler };
 };
