@@ -20,6 +20,7 @@ export const useSignup = () => {
       });
       // navigate(ROUTES.HOME);
     } catch (error) {
+      
       // console.log(error as AxiosError<{ error: string }>.er);
       // return;
       if (error instanceof AxiosError) {
