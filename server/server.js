@@ -85,15 +85,15 @@ app.post("/signin", (req, resp) => {
 
 app.post("/signup", async (req, resp) => {
   // return resp.status(400).json({ error: result.error.flatten().fieldErrors });
-  return resp.status(400).json({ error: "Email is already exist" });
+  // return resp.status(400).json({ error: "Email is already exist" });
 
   // console.log(jwt_secret);
 
-  // req.body = {
-  //   email: "sda.ru",
-  //   password: "124",
-  //   confirmPassword: "124",
-  // };
+  req.body = {
+    email: "sda.ru",
+    password: "124",
+    confirmPassword: "124",
+  };
   const result = SignupFormSchema.safeParse(req.body);
 
   if (!result.success) {

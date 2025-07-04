@@ -20,6 +20,8 @@ import type {
   SignupFormSchema,
 } from "../../model/formSchema";
 import { Toaster } from "sonner";
+import { useFormLayout } from "../../model/useFormLayout";
+import type { FormFieldsTypes } from "../../types";
 
 interface FormLayoutProps {
   buttonTitle: string;
@@ -32,6 +34,7 @@ interface FormLayoutProps {
     title: string;
   };
   schema: typeof SigninFormSchema | typeof SignupFormSchema;
+  serverValidationErrors: FormFieldsTypes;
 }
 
 export const FormLayout = ({
@@ -40,25 +43,39 @@ export const FormLayout = ({
   confirmField,
   link,
   schema,
+  serverValidationErrors,
 }: FormLayoutProps) => {
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    mode: "onChange",
-    defaultValues: {
-      email: "",
-      password: "",
-      ...(confirmField ? { confirmPassword: "" } : {}),
-    },
-  });
+  // const form = useForm<z.infer<typeof schema>>({
+  //   resolver: zodResolver(schema),
+  //   mode: "onChange",
+  //   defaultValues: {
+  //     email: "",
+  //     password: "",
+  //     ...(confirmField ? { confirmPassword: "" } : {}),
+  //   },
+  // });
+
+  // const {
+  //   watch,
+  //   formState: { errors, isValid },
+  // } = form;
+  // const isPasswordValid = !errors.password && watch("password");
+
+  // const [showPassword, setShowPassword] = useState(false);
+  // const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
-    watch,
-    formState: { errors, isValid },
-  } = form;
-  const isPasswordValid = !errors.password && watch("password");
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    showPassword,
+    setShowPassword,
+    showConfirmPassword,
+    setShowConfirmPassword,
+    isPasswordValid,
+    form,
+  } = useFormLayout({
+    schema,
+    confirmField,
+    serverValidationErrors,
+  });
 
   return (
     <div>
