@@ -28,7 +28,7 @@ export const useFormLayout = ({
 
   const {
     watch,
-    formState: { errors },
+    formState: { errors, isDirty, isValid, isSubmitting },
   } = form;
   const isPasswordValid = !errors.password && watch("password");
 
@@ -55,5 +55,8 @@ export const useFormLayout = ({
     setShowConfirmPassword,
     isPasswordValid,
     form,
+    isDirty,
+    isValid,
+    isSubmitting,
   };
 };

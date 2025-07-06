@@ -17,6 +17,11 @@ export const useSignup = () => {
 
   const signupHandler = async (data: z.infer<typeof SignupFormSchema>) => {
     try {
+      // await new Promise((res) => {
+      //   setTimeout(() => {
+      //     res();
+      //   }, 3000);
+      // });
       // throw new Error();
       const resp = await authApi.signup(data);
 

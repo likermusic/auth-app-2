@@ -22,6 +22,7 @@ import type {
 import { Toaster } from "sonner";
 import { useFormLayout } from "../../model/useFormLayout";
 import type { FormFieldsTypes } from "../../types";
+import { Spinner } from "@/shared/ui/spinner";
 
 interface FormLayoutProps {
   buttonTitle: string;
@@ -71,6 +72,9 @@ export const FormLayout = ({
     setShowConfirmPassword,
     isPasswordValid,
     form,
+    isDirty,
+    isValid,
+    isSubmitting,
   } = useFormLayout({
     schema,
     confirmField,
@@ -179,8 +183,9 @@ export const FormLayout = ({
           <Button
             className="w-full bg-[#2859FE] py-6 cursor-pointer hover:bg-[#1642d3]"
             type="submit"
+            disabled={!isDirty || !isValid}
           >
-            {buttonTitle}
+            {isSubmitting ? <Spinner size={"small"} /> : buttonTitle}
           </Button>
         </form>
         <Button variant={"link"} className="text-[#5a7ef5] block m-auto">

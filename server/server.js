@@ -52,35 +52,38 @@ export const SignupFormSchema = BaseFormSchema.extend({
   path: ["confirmPassword"],
 });
 
-app.get("/", (req, resp) => {
-  console.log(12345);
+app.post("/signin", async (req, resp) => {
+  const result = SignupFormSchema.safeParse(req.body);
 
-  resp.status(200).json({
-    id: 2,
-    name: "Alex",
+  if (!result.success) {
+    return resp.status(400).json({ error: result.error.flatten().fieldErrors });
+  }
+
+  const { email, password } = result.data;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return resp.status(401).json({ error: "Email is not correct" });
+  }
+
+  // const users = [
+  //   { email: "admin@mail.ru", password: "1234dsJMN" },
+  //   { email: "user@mail.ru", password: "1234" },
+  // ];
+
+  // 2. Сравниваем пароль с хешем в БД
+  const isValidPassword = await bcrypt.compare(password, user.password);
+  if (!isValidPassword) {
+    return resp.status(401).json({ error: "Password is not correct" });
+  }
+
+  const token = jwt.sign({ id: user.id }, jwt_secret, {
+    expiresIn: "1h",
   });
-});
 
-app.post("/signin", (req, resp) => {
-  if (!req.body.email || !req.body.password) {
-    return resp
-      .status(400)
-      .json({ error: "Вы должны передать email и password" });
-  }
-
-  const { email, password } = req.body;
-  const users = [
-    { email: "admin@mail.ru", password: "1234dsJMN" },
-    { email: "user@mail.ru", password: "1234" },
-  ];
-  const user = users.find(
-    (user) => user.email === email && user.password === password,
-  );
-  if (user) {
-    resp.status(200).json({ message: "Вы успешно авторизованы" });
-  } else {
-    resp.status(401).json({ error: "Пользователь не найден" });
-  }
+  return resp
+    .status(200)
+    .json({ token, user: { id: user.id, email: user.email } });
 });
 
 app.post("/signup", async (req, resp) => {
@@ -89,11 +92,11 @@ app.post("/signup", async (req, resp) => {
 
   // console.log(jwt_secret);
 
-  req.body = {
-    email: "sda.ru",
-    password: "124",
-    confirmPassword: "124",
-  };
+  // req.body = {
+  //   email: "sda.ru",
+  //   password: "124",
+  //   confirmPassword: "124",
+  // };
   const result = SignupFormSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -101,9 +104,11 @@ app.post("/signup", async (req, resp) => {
   }
 
   const { email, password } = req.body;
+  // Заменить нужно на это сгизу ->
+  // const { email, password } = result.data;
 
-  const isUserExists = await prisma.user.findUnique({ where: { email } });
-  if (isUserExists) {
+  const isUserExist = await prisma.user.findUnique({ where: { email } });
+  if (isUserExist) {
     return resp.status(400).json({ error: "Email is already exist" });
   }
 
@@ -128,5 +133,27 @@ app.post("/signup", async (req, resp) => {
     return resp.status(500).json({ error: "Server error" });
   }
 });
+
+const checkAuth = (req, resp, next) => {
+  if (!req.headers.authorization) {
+    return resp.status(401).json({ error: "Token is not found" });
+  }
+
+  const token = req.headers.authorization.split(" ")[1];
+
+  if (!token) {
+    // return resp.redirect("/signup");
+    return resp.status(401).json({ error: "Token is not found" });
+  }
+
+  jwt.verify(token, jwt_secret, (err, user) => {
+    if (err) {
+      return resp.status(401).json({ error: "Invalid token" });
+    }
+    next();
+  });
+};
+
+app.get("/protected", checkAuth, async (req, resp) => {});
 
 app.listen(4000, () => console.log("Server started"));
