@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/shared/ui/form";
 import { Input } from "@/shared/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -20,18 +20,22 @@ import type {
   SignupFormSchema,
 } from "../../model/formSchema";
 import { Toaster } from "sonner";
+import type {
+  BaseFormLayoutProps,
+  ValidationFormFieldsTypes,
+} from "../../types";
+import { useFormLayout } from "../../model/useFormLayout";
+import { Spinner } from "@/shared/ui/spinner";
 
-interface FormLayoutProps {
+interface FormLayoutProps extends BaseFormLayoutProps {
   buttonTitle: string;
   onSubmit: (
     data: z.infer<typeof SigninFormSchema> | z.infer<typeof SignupFormSchema>,
   ) => Promise<void>;
-  confirmField?: boolean;
   link: {
     to: string;
     title: string;
   };
-  schema: typeof SigninFormSchema | typeof SignupFormSchema;
 }
 
 export const FormLayout = ({
@@ -40,25 +44,23 @@ export const FormLayout = ({
   confirmField,
   link,
   schema,
+  serverValidationErrors,
 }: FormLayoutProps) => {
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    mode: "onChange",
-    defaultValues: {
-      email: "",
-      password: "",
-      ...(confirmField ? { confirmPassword: "" } : {}),
-    },
-  });
-
   const {
-    watch,
-    formState: { errors, isValid },
-  } = form;
-  const isPasswordValid = !errors.password && watch("password");
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    form,
+    showPassword,
+    setShowPassword,
+    isPasswordValid,
+    showConfirmPassword,
+    setShowConfirmPassword,
+    isValid,
+    isDirty,
+    isSubmitting,
+  } = useFormLayout({
+    schema,
+    serverValidationErrors,
+    confirmField,
+  });
 
   return (
     <div>
@@ -162,8 +164,9 @@ export const FormLayout = ({
           <Button
             className="w-full bg-[#2859FE] py-6 cursor-pointer hover:bg-[#1642d3]"
             type="submit"
+            disabled={!isDirty || !isValid || isSubmitting}
           >
-            {buttonTitle}
+            {isSubmitting ? <Spinner size={"small"} /> : buttonTitle}
           </Button>
         </form>
         <Button variant={"link"} className="text-[#5a7ef5] block m-auto">

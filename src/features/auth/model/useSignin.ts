@@ -5,26 +5,35 @@ import type { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/router/constants";
 import { toast } from "sonner";
+import * as Cookies from "js-cookie";
+import { useState } from "react";
+import type { ValidationFormFieldsTypes } from "../types";
 
 export const useSignin = () => {
   const navigate = useNavigate();
+  const [serverValidationErrors, setServerValidationErrors] =
+    useState<ValidationFormFieldsTypes | null>(null);
+
   const signinHandler = async (data: z.infer<typeof SigninFormSchema>) => {
-    console.log("signinHandler");
-
     try {
-      await authApi.signin(data);
+      const resp = await authApi.signin(data);
+      if (!resp.data.token) throw new Error("Token not found");
+      Cookies.default.set("token", resp.data.token, {
+        expires: 1 / 24,
+      });
       navigate(ROUTES.HOME);
-    } catch (error) {
-      toast.error("Signin fail");
-    }
+    } catch (err) {
+      const error = err as AxiosError<{
+        error: string | ValidationFormFieldsTypes;
+      }>;
 
-    // authApi
-    //   .signin({ email: "admin@mail.ru", password: "1234" })
-    //   .then((resp) => console.log(resp.data.message))
-    //   .catch((error: AxiosError<{ error: string }>) => {
-    //     console.log(error.response?.data.error);
-    //   });
+      if (error.response?.data.error instanceof Object) {
+        setServerValidationErrors(error.response?.data.error);
+      } else {
+        toast.error(error.response?.data.error);
+      }
+    }
   };
 
-  return { signinHandler };
+  return { signinHandler, serverValidationErrors };
 };

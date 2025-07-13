@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { useState } from "react";
 
 const app = express();
 const prisma = new PrismaClient();
@@ -61,31 +62,38 @@ app.get("/", (req, resp) => {
   });
 });
 
-app.post("/signin", (req, resp) => {
-  if (!req.body.email || !req.body.password) {
-    return resp
-      .status(400)
-      .json({ error: "Вы должны передать email и password" });
+app.post("/signin", async (req, resp) => {
+  const result = SigninFormSchema.safeParse(req.body);
+  if (!result.success) {
+    return resp.status(400).json({ error: result.error.flatten().fieldErrors });
   }
 
-  const { email, password } = req.body;
-  const users = [
-    { email: "admin@mail.ru", password: "1234dsJMN" },
-    { email: "user@mail.ru", password: "1234" },
-  ];
-  const user = users.find(
-    (user) => user.email === email && user.password === password,
-  );
-  if (user) {
-    resp.status(200).json({ message: "Вы успешно авторизованы" });
-  } else {
-    resp.status(401).json({ error: "Пользователь не найден" });
+  const { email, password } = result.data;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return resp.status(401).json({ error: "Email is not correct" });
   }
+
+  const isValidPassword = await bcrypt.compare(password, user.password);
+
+  if (!isValidPassword) {
+    return resp.status(401).json({ error: "Password is not correct" });
+  }
+
+  const token = jwt.sign({ id: user.id }, jwt_secret, {
+    expiresIn: "1h",
+  });
+
+  return resp
+    .status(200)
+    .json({ token, user: { id: user.id, email: user.email } });
 });
 
 app.post("/signup", async (req, resp) => {
   // return resp.status(400).json({ error: result.error.flatten().fieldErrors });
-  return resp.status(400).json({ error: "Email is already exist" });
+
+  // return resp.status(400).json({ error: "Email is already exist" });
 
   // console.log(jwt_secret);
 
@@ -100,7 +108,7 @@ app.post("/signup", async (req, resp) => {
     return resp.status(400).json({ error: result.error.flatten().fieldErrors });
   }
 
-  const { email, password } = req.body;
+  const { email, password } = result.data;
 
   const isUserExists = await prisma.user.findUnique({ where: { email } });
   if (isUserExists) {
