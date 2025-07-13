@@ -1,5 +1,7 @@
+import { RouteNames } from "../types";
+
 //TODO: Rename ROUTES to ENDPOINTS
 export const ROUTES = {
-  SIGNIN: "signin",
-  SIGNUP: "signup",
+  SIGNIN: RouteNames["Signin"],
+  SIGNUP: RouteNames["Signup"],
 } as const;

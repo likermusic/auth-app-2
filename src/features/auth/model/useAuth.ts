@@ -1,29 +1,27 @@
-import { AxiosError } from "axios";
-import type { SignupFormSchema } from "./formSchema";
+import type { RouteNames } from "@/shared/types";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { ValidationFormFieldsTypes } from "../types";
+import type { SigninFormSchema, SignupFormSchema } from "./formSchema";
 import type { z } from "zod";
 import { authApi } from "@/entities/user";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/shared/router/constants";
-import { toast } from "sonner";
 import * as Cookies from "js-cookie";
-import type { ValidationFormFieldsTypes } from "../types";
-import { useState } from "react";
+import { ROUTES } from "@/shared/router/constants";
+import type { AxiosError } from "axios";
+import { toast } from "sonner";
 
-export const useSignup = () => {
+// type Routes = `${RouteNames}`; // 'signin' | 'signup'
+
+export const useAuth = (ROUTE_VALUE: `${RouteNames}`) => {
   const navigate = useNavigate();
-
   const [serverValidationErrors, setServerValidationErrors] =
     useState<ValidationFormFieldsTypes | null>(null);
 
-  const signupHandler = async (data: z.infer<typeof SignupFormSchema>) => {
+  const authHandler = async (
+    data: z.infer<typeof SigninFormSchema> | z.infer<typeof SignupFormSchema>,
+  ) => {
     try {
-      // throw new Error();
-      // await new Promise((res) => {
-      //   setTimeout(() => {
-      //     res();
-      //   }, 2000);
-      // });
-      const resp = await authApi.signup(data);
+      const resp = await authApi[ROUTE_VALUE](data);
       if (!resp.data.token) throw new Error("Token not found");
       Cookies.default.set("token", resp.data.token, {
         expires: 1 / 24,
@@ -42,5 +40,5 @@ export const useSignup = () => {
     }
   };
 
-  return { signupHandler, serverValidationErrors };
+  return { authHandler, serverValidationErrors };
 };

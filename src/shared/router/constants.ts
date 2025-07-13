@@ -1,5 +1,7 @@
+import { RouteNames } from "../types";
+
 export const ROUTES = {
   HOME: "/",
-  SIGNIN: "/signin",
-  SIGNUP: "/signup",
+  SIGNIN: `/${RouteNames["Signin"]}`,
+  SIGNUP: `/${RouteNames["Signup"]}`,
 } as const;
