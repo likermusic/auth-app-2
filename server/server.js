@@ -63,6 +63,14 @@ app.get("/", (req, resp) => {
 });
 
 app.post("/signin", async (req, resp) => {
+  // const randomBit = Math.round(Math.random());
+  // if (randomBit === 0) {
+  //   req.body = {
+  //     email: "sda.ru",
+  //     password: "124",
+  //     confirmPassword: "124",
+  //   };
+  // }
   const result = SigninFormSchema.safeParse(req.body);
   if (!result.success) {
     return resp.status(400).json({ error: result.error.flatten().fieldErrors });
@@ -135,6 +143,30 @@ app.post("/signup", async (req, resp) => {
   } else {
     return resp.status(500).json({ error: "Server error" });
   }
+});
+
+const checkAuth = (req, resp, next) => {
+  if (!req.headers.authorization) {
+    return resp.status(401).json({ error: "Token is not found" });
+  }
+
+  const token = req.headers.authorization.split(" ")[1];
+  if (token === "undefined") {
+    return resp.status(401).json({ error: "Token is not found" });
+  }
+
+  jwt.verify(token, jwt_secret, (err, user) => {
+    if (err) {
+      return resp.status(401).json({ error: "Invalid token" });
+    }
+    next();
+  });
+
+  // next();
+};
+
+app.get("/protected", checkAuth, async (req, resp) => {
+  console.log(2);
 });
 
 app.listen(4000, () => console.log("Server started"));
