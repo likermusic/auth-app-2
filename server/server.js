@@ -78,24 +78,28 @@ app.post("/signin", async (req, resp) => {
 
   const { email, password } = result.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return resp.status(401).json({ error: "Email is not correct" });
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return resp.status(401).json({ error: "Email is not correct" });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return resp.status(401).json({ error: "Password is not correct" });
+    }
+
+    const token = jwt.sign({ id: user.id }, jwt_secret, {
+      expiresIn: "1h",
+    });
+
+    return resp
+      .status(200)
+      .json({ token, user: { id: user.id, email: user.email } });
+  } catch (err) {
+    return resp.status(500).json({ error: "Server error" });
   }
-
-  const isValidPassword = await bcrypt.compare(password, user.password);
-
-  if (!isValidPassword) {
-    return resp.status(401).json({ error: "Password is not correct" });
-  }
-
-  const token = jwt.sign({ id: user.id }, jwt_secret, {
-    expiresIn: "1h",
-  });
-
-  return resp
-    .status(200)
-    .json({ token, user: { id: user.id, email: user.email } });
 });
 
 app.post("/signup", async (req, resp) => {
@@ -118,29 +122,33 @@ app.post("/signup", async (req, resp) => {
 
   const { email, password } = result.data;
 
-  const isUserExists = await prisma.user.findUnique({ where: { email } });
-  if (isUserExists) {
-    return resp.status(400).json({ error: "Email is already exist" });
-  }
+  try {
+    const isUserExists = await prisma.user.findUnique({ where: { email } });
+    if (isUserExists) {
+      return resp.status(400).json({ error: "Email is already exist" });
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-    },
-  });
-
-  if (newUser) {
-    const token = jwt.sign({ id: newUser.id }, jwt_secret, {
-      expiresIn: "1h",
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+      },
     });
 
-    return resp
-      .status(201)
-      .json({ token, user: { id: newUser.id, email: newUser.email } });
-  } else {
+    if (newUser) {
+      const token = jwt.sign({ id: newUser.id }, jwt_secret, {
+        expiresIn: "1h",
+      });
+
+      return resp
+        .status(201)
+        .json({ token, user: { id: newUser.id, email: newUser.email } });
+    } else {
+      return resp.status(500).json({ error: "Server error" });
+    }
+  } catch {
     return resp.status(500).json({ error: "Server error" });
   }
 });
