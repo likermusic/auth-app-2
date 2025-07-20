@@ -17,14 +17,14 @@ const router = createBrowserRouter([
       {
         path: ROUTES.HOME,
         element: <Home />,
-        // loader: async () => {
-        //   try {
-        //     const resp = await authApi.protected();
-        //   } catch (error) {
-        //     throw redirect(ROUTES.SIGNIN);
-        //     // console.log(1111);
-        //   }
-        // },
+        loader: async () => {
+          try {
+            const resp = await authApi.protected();
+          } catch (error) {
+            throw redirect(ROUTES.SIGNIN);
+            // console.log(1111);
+          }
+        },
       },
     ],
   },

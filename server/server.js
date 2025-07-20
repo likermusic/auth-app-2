@@ -174,7 +174,8 @@ const checkAuth = (req, resp, next) => {
 };
 
 app.get("/protected", checkAuth, async (req, resp) => {
-  console.log(2);
+  // console.log(2);
+  return resp.status(200).json({ mes: "OOOOK" });
 });
 
 app.listen(4000, () => console.log("Server started"));
