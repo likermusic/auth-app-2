@@ -5,11 +5,14 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { useState } from "react";
+import cookieParser from "cookie-parser";
 
 const app = express();
 const prisma = new PrismaClient();
+
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cookieParser());
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 const jwt_secret = process.env.JWT_SECRET;
 
@@ -53,6 +56,14 @@ export const SignupFormSchema = BaseFormSchema.extend({
   path: ["confirmPassword"],
 });
 
+const generateTockens = (id, email) => {
+  const token = jwt.sign({ id, email }, jwt_secret, {
+    expiresIn: "1h",
+  });
+
+  return { token };
+};
+
 app.post("/api/signin", async (req, resp) => {
   // const randomBit = Math.round(Math.random());
   // if (randomBit === 0) {
@@ -81,13 +92,22 @@ app.post("/api/signin", async (req, resp) => {
       return resp.status(401).json({ error: "Password is not correct" });
     }
 
-    const token = jwt.sign({ id: user.id }, jwt_secret, {
-      expiresIn: "1h",
-    });
+    console.log(111);
+    const { token } = generateTockens(user.id, user.email);
+
+    // return resp
+    //   .status(200)
+    //   .json({ token, user: { id: user.id, email: user.email } });
 
     return resp
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: true,
+        maxAge: 60 * 60 * 1000,
+      })
       .status(200)
-      .json({ token, user: { id: user.id, email: user.email } });
+      .json({ user: { id: user.id, email: user.email } });
   } catch (err) {
     return resp.status(500).json({ error: "Server error" });
   }
@@ -129,15 +149,19 @@ app.post("/api/signup", async (req, resp) => {
     });
 
     if (newUser) {
-      const token = jwt.sign({ id: newUser.id }, jwt_secret, {
-        expiresIn: "1h",
-      });
+      const { token } = generateTockens(newUser.id, newUser.email);
 
       return resp
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+          maxAge: 60 * 60 * 1000,
+        })
         .status(201)
-        .json({ token, user: { id: newUser.id, email: newUser.email } });
+        .json({ user: { id: user.id, email: user.email } });
     } else {
-      return resp.status(500).json({ error: "Server error" });
+      throw new Error();
     }
   } catch {
     return resp.status(500).json({ error: "Server error" });
@@ -145,28 +169,37 @@ app.post("/api/signup", async (req, resp) => {
 });
 
 const checkAuth = (req, resp, next) => {
-  if (!req.headers.authorization) {
-    return resp.status(401).json({ error: "Token is not found" });
-  }
+  const messages = {
+    notFoundToken: "Token is not found",
+    invalidToken: "Invalid token",
+  };
 
-  const token = req.headers.authorization.split(" ")[1];
-  if (token === "undefined") {
-    return resp.status(401).json({ error: "Token is not found" });
-  }
+  try {
+    const token = req.cookies.token;
 
-  jwt.verify(token, jwt_secret, (err, user) => {
-    if (err) {
-      return resp.status(401).json({ error: "Invalid token" });
+    if (!token) {
+      throw new Error(messages.notFoundToken);
     }
-    next();
-  });
+
+    jwt.verify(token, jwt_secret, (err, user) => {
+      if (err) {
+        // return resp.status(401).json({ error: "Invalid token" });
+        throw new Error(messages.invalidToken);
+      }
+      req.user = user;
+      next();
+    });
+  } catch (error) {
+    return resp.status(401).json({ error: error.message });
+  }
 
   // next();
 };
 
 app.get("/api/protected", checkAuth, async (req, resp) => {
-  // console.log(2);
-  return resp.status(200).json({ mes: "OOOOK" });
+  return resp
+    .status(200)
+    .json({ user: { id: req.user.id, email: req.user.email } });
 });
 
 app.listen(4000, () => console.log("Server started"));

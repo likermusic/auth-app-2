@@ -20,6 +20,7 @@ const router = createBrowserRouter([
         loader: async () => {
           try {
             const resp = await authApi.protected();
+            console.log(resp.data.user.email);
           } catch (error) {
             console.log(error);
 
