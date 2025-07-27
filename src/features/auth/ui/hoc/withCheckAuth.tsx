@@ -22,7 +22,8 @@ export const withCheckAuth = <T,>(Component: (props: T) => ReactElement) => {
           const resp = await authApi.protected();
           navigate(ROUTES.HOME);
         } catch (error) {
-          console.log("ERR");
+          setLoading(false);
+          console.log("need to auth");
         }
       })();
     }, []);

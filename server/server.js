@@ -53,16 +53,7 @@ export const SignupFormSchema = BaseFormSchema.extend({
   path: ["confirmPassword"],
 });
 
-app.get("/", (req, resp) => {
-  console.log(12345);
-
-  resp.status(200).json({
-    id: 2,
-    name: "Alex",
-  });
-});
-
-app.post("/signin", async (req, resp) => {
+app.post("/api/signin", async (req, resp) => {
   // const randomBit = Math.round(Math.random());
   // if (randomBit === 0) {
   //   req.body = {
@@ -102,7 +93,7 @@ app.post("/signin", async (req, resp) => {
   }
 });
 
-app.post("/signup", async (req, resp) => {
+app.post("/api/signup", async (req, resp) => {
   // return resp.status(400).json({ error: result.error.flatten().fieldErrors });
 
   // return resp.status(400).json({ error: "Email is already exist" });
@@ -173,7 +164,7 @@ const checkAuth = (req, resp, next) => {
   // next();
 };
 
-app.get("/protected", checkAuth, async (req, resp) => {
+app.get("/api/protected", checkAuth, async (req, resp) => {
   // console.log(2);
   return resp.status(200).json({ mes: "OOOOK" });
 });
