@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { AppLayout } from "./AppLayout";
 import { authApi } from "@/entities/user";
+import { useState } from "react";
 
 const router = createBrowserRouter([
   {
@@ -20,12 +21,10 @@ const router = createBrowserRouter([
         loader: async () => {
           try {
             const resp = await authApi.protected();
-            console.log(resp.data.user.email);
+            return { user: resp.data.user };
           } catch (error) {
             console.log(error);
-
             throw redirect(ROUTES.SIGNIN);
-            // console.log(1111);
           }
         },
       },

@@ -1,12 +1,12 @@
-import React from "react";
+import { Header } from "@/widgets/header";
 import { Outlet } from "react-router-dom";
 
 export const AppLayout = () => {
   return (
     <>
-      <h2>Header</h2>
+      <Header />
       <Outlet />
-      <h2>Footer</h2>
+      {/* <h2>Footer</h2> */}
     </>
   );
 };

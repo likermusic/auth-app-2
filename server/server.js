@@ -56,7 +56,7 @@ export const SignupFormSchema = BaseFormSchema.extend({
   path: ["confirmPassword"],
 });
 
-const generateTockens = (id, email) => {
+const generateTokens = (id, email) => {
   const token = jwt.sign({ id, email }, jwt_secret, {
     expiresIn: "1h",
   });
@@ -73,6 +73,7 @@ app.post("/api/signin", async (req, resp) => {
   //     confirmPassword: "124",
   //   };
   // }
+
   const result = SigninFormSchema.safeParse(req.body);
   if (!result.success) {
     return resp.status(400).json({ error: result.error.flatten().fieldErrors });
@@ -92,8 +93,7 @@ app.post("/api/signin", async (req, resp) => {
       return resp.status(401).json({ error: "Password is not correct" });
     }
 
-    console.log(111);
-    const { token } = generateTockens(user.id, user.email);
+    const { token } = generateTokens(user.id, user.email);
 
     // return resp
     //   .status(200)
@@ -149,7 +149,7 @@ app.post("/api/signup", async (req, resp) => {
     });
 
     if (newUser) {
-      const { token } = generateTockens(newUser.id, newUser.email);
+      const { token } = generateTokens(newUser.id, newUser.email);
 
       return resp
         .cookie("token", token, {

@@ -26,7 +26,7 @@ export const useAuth = (ROUTE_VALUE: `${RouteNames}`) => {
     data: z.infer<typeof SigninFormSchema> | z.infer<typeof SignupFormSchema>,
   ) => {
     try {
-      const resp = await authApi[ROUTE_VALUE](data);
+      await authApi[ROUTE_VALUE](data);
       // if (!resp.data.token) throw new Error("Token not found");
 
       // Cookies.default.set("token", resp.data.token, {
