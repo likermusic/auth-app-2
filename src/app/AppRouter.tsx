@@ -10,6 +10,7 @@ import {
 import { AppLayout } from "./AppLayout";
 import { authApi } from "@/entities/user";
 import { useState } from "react";
+import { About } from "@/pages/about";
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,11 @@ const router = createBrowserRouter([
             throw redirect(ROUTES.SIGNIN);
           }
         },
+      },
+
+      {
+        path: "/about",
+        element: <About />,
       },
     ],
   },

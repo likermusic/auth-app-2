@@ -4,5 +4,6 @@ import { RouteNames } from "../types";
 export const ROUTES = {
   SIGNIN: RouteNames["Signin"],
   SIGNUP: RouteNames["Signup"],
+  SIGNOUT: RouteNames["Signout"],
   PROTECTED: RouteNames["Protected"],
 } as const;

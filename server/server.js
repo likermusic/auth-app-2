@@ -168,6 +168,24 @@ app.post("/api/signup", async (req, resp) => {
   }
 });
 
+app.get("/api/signout", async (req, resp) => {
+  return resp.status(401).json({ error: "Token is not found" });
+
+  const token = req.cookies.token;
+  if (token) {
+    return resp
+      .status(200)
+      .clearCookie("token", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+      })
+      .json({ message: "Signout success" });
+  } else {
+    return resp.status(401).json({ error: "Token is not found" });
+  }
+});
+
 const checkAuth = (req, resp, next) => {
   const messages = {
     notFoundToken: "Token is not found",
