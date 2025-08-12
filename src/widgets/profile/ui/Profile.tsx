@@ -6,12 +6,13 @@ import { Toaster } from "sonner";
 
 export const Profile = () => {
   const user = useUserStore((state) => state.user);
+  const { signoutHandler } = useSignout();
   return (
     <div>
       <Toaster />
       <label>{user?.email}</label>
       <Button
-        onClick={useSignout}
+        onClick={signoutHandler}
         variant={"outline"}
         className="text-black cursor-pointer ml-3"
       >

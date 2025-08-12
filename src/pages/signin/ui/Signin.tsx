@@ -1,3 +1,4 @@
+import { useUserStore } from "@/entities/user";
 import { authApi } from "@/entities/user/api/auth";
 import { SigninForm, withCheckAuth } from "@/features/auth";
 

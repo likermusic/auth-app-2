@@ -57,11 +57,14 @@ export const SignupFormSchema = BaseFormSchema.extend({
 });
 
 const generateTokens = (id, email) => {
-  const token = jwt.sign({ id, email }, jwt_secret, {
+  const accessToken = jwt.sign({ id, email }, jwt_secret, {
     expiresIn: "1h",
   });
+  const refreshToken = jwt.sign({ id, email }, jwt_secret, {
+    expiresIn: "7d",
+  });
 
-  return { token };
+  return { token: accessToken, refreshToken };
 };
 
 app.post("/api/signin", async (req, resp) => {
@@ -169,8 +172,6 @@ app.post("/api/signup", async (req, resp) => {
 });
 
 app.get("/api/signout", async (req, resp) => {
-  return resp.status(401).json({ error: "Token is not found" });
-
   const token = req.cookies.token;
   if (token) {
     return resp
