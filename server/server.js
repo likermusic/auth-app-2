@@ -15,6 +15,14 @@ app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 const jwt_secret = process.env.JWT_SECRET;
+const jwt_refresh_secret = process.env.JWT_REFRESH_SECRET;
+
+const tokens_expiration_time = {
+  jwt_access_token_format: "1h",
+  jwt_refresh_token_format: "7d",
+  date_access_token_format: 60 * 60 * 1000,
+  date_refresh_token_format: 7 * 24 * 60 * 60 * 1000,
+};
 
 const formSchemaConst = {
   emailMin: 6,
@@ -58,10 +66,10 @@ export const SignupFormSchema = BaseFormSchema.extend({
 
 const generateTokens = (id, email) => {
   const accessToken = jwt.sign({ id, email }, jwt_secret, {
-    expiresIn: "1h",
+    expiresIn: tokens_expiration_time.jwt_access_token_format,
   });
   const refreshToken = jwt.sign({ id, email }, jwt_secret, {
-    expiresIn: "7d",
+    expiresIn: tokens_expiration_time.jwt_refresh_token_format,
   });
 
   return { token: accessToken, refreshToken };
@@ -96,18 +104,41 @@ app.post("/api/signin", async (req, resp) => {
       return resp.status(401).json({ error: "Password is not correct" });
     }
 
-    const { token } = generateTokens(user.id, user.email);
+    const { token, refreshToken } = generateTokens(user.id, user.email);
 
     // return resp
     //   .status(200)
     //   .json({ token, user: { id: user.id, email: user.email } });
+
+    await prisma.refreshToken.upsert({
+      where: { userId: user.id },
+      update: {
+        refreshToken: refreshToken,
+        expiresAt: new Date(
+          Date.now() + tokens_expiration_time.date_refresh_token_format,
+        ),
+      },
+      create: {
+        userId: user.id,
+        refreshToken: refreshToken,
+        expiresAt: new Date(
+          Date.now() + tokens_expiration_time.date_refresh_token_format,
+        ),
+      },
+    });
 
     return resp
       .cookie("token", token, {
         httpOnly: true,
         secure: true,
         sameSite: true,
-        maxAge: 60 * 60 * 1000,
+        maxAge: tokens_expiration_time.date_access_token_format,
+      })
+      .cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: true,
+        maxAge: tokens_expiration_time.date_refresh_token_format,
       })
       .status(200)
       .json({ user: { id: user.id, email: user.email } });
@@ -138,6 +169,7 @@ app.post("/api/signup", async (req, resp) => {
 
   try {
     const isUserExists = await prisma.user.findUnique({ where: { email } });
+
     if (isUserExists) {
       return resp.status(400).json({ error: "Email is already exist" });
     }
@@ -152,7 +184,19 @@ app.post("/api/signup", async (req, resp) => {
     });
 
     if (newUser) {
-      const { token } = generateTokens(newUser.id, newUser.email);
+      const { token, refreshToken } = generateTokens(newUser.id, newUser.email);
+      console.log(111);
+
+      await prisma.refreshToken.create({
+        data: {
+          userId: newUser.id,
+          refreshToken: refreshToken,
+          expiresAt: new Date(
+            Date.now() + tokens_expiration_time.date_refresh_token_format,
+          ),
+        },
+      });
+      console.log(222);
 
       return resp
         .cookie("token", token, {
@@ -161,12 +205,20 @@ app.post("/api/signup", async (req, resp) => {
           sameSite: true,
           maxAge: 60 * 60 * 1000,
         })
+        .cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+          maxAge: tokens_expiration_time.date_refresh_token_format,
+        })
         .status(201)
-        .json({ user: { id: user.id, email: user.email } });
+        .json({ user: { id: newUser.id, email: newUser.email } });
     } else {
       throw new Error();
     }
-  } catch {
+  } catch (err) {
+    console.log(err);
+
     return resp.status(500).json({ error: "Server error" });
   }
 });
@@ -219,6 +271,59 @@ app.get("/api/protected", checkAuth, async (req, resp) => {
   return resp
     .status(200)
     .json({ user: { id: req.user.id, email: req.user.email } });
+});
+
+app.post("/api/refresh-token", async (req, resp) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) throw new Error("Refresh token is not found");
+
+  try {
+    jwt.verify(refreshToken, jwt_refresh_secret, async (err, user) => {
+      if (err) {
+        throw new Error("Invalid refresh token");
+      }
+      const dbRefreshToken = await prisma.refreshToken.findUnique({
+        where: { userId: user.id },
+      });
+
+      if (
+        !dbRefreshToken ||
+        !dbRefreshToken.refreshToken ||
+        dbRefreshToken.refreshToken !== refreshToken
+      )
+        throw new Error("Invalid refresh token");
+
+      const { token, newRefreshToken } = generateTokens(user.id, user.email);
+
+      await prisma.refreshToken.update({
+        where: { userId: user.id },
+        data: {
+          token: newRefreshToken,
+          expiresAt: new Date(
+            Date.now() + tokens_expiration_time.date_refresh_token_format,
+          ),
+        },
+      });
+
+      return resp
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+          maxAge: tokens_expiration_time.date_access_token_format,
+        })
+        .cookie("refreshToken", newRefreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+          maxAge: tokens_expiration_time.date_refresh_token_format,
+        })
+        .status(201)
+        .json({ user: { id: user.id, email: user.email } });
+    });
+  } catch (error) {
+    return resp.status(401).json({ error: error.message });
+  }
 });
 
 app.listen(4000, () => console.log("Server started"));

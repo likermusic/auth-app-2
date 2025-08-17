@@ -24,7 +24,7 @@ const router = createBrowserRouter([
             const resp = await authApi.protected();
             return { user: resp.data.user };
           } catch (error) {
-            console.log(error);
+            console.log(12345);
             throw redirect(ROUTES.SIGNIN);
           }
         },
