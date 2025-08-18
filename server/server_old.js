@@ -112,8 +112,20 @@ app.post("/api/signin", async (req, resp) => {
 
     const { token, refreshToken } = generateTokens(user.id, user.email);
 
-    await prisma.refreshToken.create({
-      data: {
+    // return resp
+    //   .status(200)
+    //   .json({ token, user: { id: user.id, email: user.email } });
+
+    //6. здесь после изменения schema.prisma теперь нужно только на create делать
+    await prisma.refreshToken.upsert({
+      where: { userId: user.id },
+      update: {
+        refreshToken: refreshToken,
+        expiresAt: new Date(
+          Date.now() + tokens_expiration_time.date_refresh_token_format,
+        ),
+      },
+      create: {
         userId: user.id,
         refreshToken: refreshToken,
         expiresAt: new Date(
@@ -249,7 +261,9 @@ const checkAuth = (req, resp, next) => {
 
     jwt.verify(token, jwt_secret, (err, user) => {
       if (err) {
-        return resp.status(401).json({ error: messages.invalidToken });
+        //5. Здесь тоже не сработает тк внутренность колбэка не обрабатывается try-catch
+        // return resp.status(401).json({ error: "Invalid token" });
+        throw new Error(messages.invalidToken);
       }
       req.user = user;
       next();
@@ -267,33 +281,36 @@ app.get("/api/protected", checkAuth, async (req, resp) => {
     .json({ user: { id: req.user.id, email: req.user.email } });
 });
 
+//2. Поменял на GET здесь и в axios-instance
 app.get("/api/refresh-token", async (req, resp) => {
+  //4. Здесь выбрасываем ощибку но блок не обернут в try-catch
   const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken)
-    return resp.status(401).json({ error: "Refresh token is not found" });
+  if (!refreshToken) throw new Error("Refresh token is not found");
 
-  jwt.verify(refreshToken, jwt_refresh_secret, async (err, user) => {
-    if (err) {
-      return resp.status(401).json({ error: "Invalid refresh token" });
-    }
+  //3. ошибка, выброшенная внутри колбэка jwt.verify, не попадает в блок catch вашего try-catch. Это происходит потому, что jwt.verify работает асинхронно с колбэком, и ошибка, выброшенная внутри колбэка, не будет перехвачена внешним try-catch - поэтому в терминале крэш
+  try {
+    jwt.verify(refreshToken, jwt_refresh_secret, async (err, user) => {
+      if (err) {
+        throw new Error("Invalid refresh token");
+      }
 
-    try {
-      // Ищем именно по refreshToken, а не по userId
+      // 7. userId (findUnique({ where: { userId: user.id } })), больше работать не будет — потому что теперь у одного userId может быть несколько строк.
       const dbRefreshToken = await prisma.refreshToken.findUnique({
-        where: { refreshToken },
+        where: { userId: user.id },
       });
 
       if (
-        !dbRefreshToken?.refreshToken ||
+        !dbRefreshToken ||
+        !dbRefreshToken.refreshToken ||
         dbRefreshToken.refreshToken !== refreshToken
-      ) {
-        return resp.status(401).json({ error: "Invalid refresh token" });
-      }
+      )
+        throw new Error("Invalid refresh token");
 
       const { token, newRefreshToken } = generateTokens(user.id, user.email);
 
+      // 8.  where: { userId: user.id } - так нельзя тк теперь может быть несколько записей для одного userId
       await prisma.refreshToken.update({
-        where: { id: dbRefreshToken.id },
+        where: { userId: user.id },
         data: {
           token: newRefreshToken,
           expiresAt: new Date(
@@ -317,10 +334,12 @@ app.get("/api/refresh-token", async (req, resp) => {
         })
         .status(201)
         .json({ user: { id: user.id, email: user.email } });
-    } catch (error) {
-      return resp.status(500).json({ error: "Internal server error" });
-    }
-  });
+    });
+  } catch (error) {
+    console.log(123321);
+
+    return resp.status(401).json({ error: error.message });
+  }
 });
 
 app.listen(4000, () => console.log("Server started"));

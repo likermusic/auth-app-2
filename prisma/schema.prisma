@@ -13,18 +13,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//refreshToken RefreshToken?  нужно делать массивом потому что если куку удалить руками а из бд не удалить то при входе создаст куку и при попытке джобавить в бд будет ошибка тк на одного юзера один токен
+
 model User {
   id Int @id @default(autoincrement())
   email String @unique
   password String
   createdAt DateTime @default(now())
-  refreshToken RefreshToken? 
+  refreshTokens RefreshToken[] 
 }
 
+// userId Int @unique делаем не уникальным
 model RefreshToken {
   id Int @id @default(autoincrement())
   refreshToken String @unique
-  userId Int @unique
+  userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
