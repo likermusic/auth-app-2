@@ -49,7 +49,8 @@ export const useAuth = (ROUTE_VALUE: `${RouteNames}`) => {
       if (error.response?.data.error instanceof Object) {
         setServerValidationErrors(error.response?.data.error);
       } else {
-        toast.error(error.response?.data.error);
+        console.log(error.response?.data.error);
+        toast.error("Authorization error. Try again");
       }
     }
   };

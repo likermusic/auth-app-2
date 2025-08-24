@@ -290,12 +290,15 @@ app.get("/api/refresh-token", async (req, resp) => {
         return resp.status(401).json({ error: "Invalid refresh token" });
       }
 
-      const { token, newRefreshToken } = generateTokens(user.id, user.email);
+      const { token, refreshToken: newRefreshToken } = generateTokens(
+        user.id,
+        user.email,
+      );
 
       await prisma.refreshToken.update({
         where: { id: dbRefreshToken.id },
         data: {
-          token: newRefreshToken,
+          refreshToken: newRefreshToken,
           expiresAt: new Date(
             Date.now() + tokens_expiration_time.date_refresh_token_format,
           ),
@@ -318,6 +321,8 @@ app.get("/api/refresh-token", async (req, resp) => {
         .status(201)
         .json({ user: { id: user.id, email: user.email } });
     } catch (error) {
+      console.log(error);
+
       return resp.status(500).json({ error: "Internal server error" });
     }
   });
