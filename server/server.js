@@ -112,6 +112,10 @@ app.post("/api/signin", async (req, resp) => {
 
     const { token, refreshToken } = generateTokens(user.id, user.email);
 
+    await prisma.refreshToken.deleteMany({
+      where: { userId: user.id },
+    });
+
     await prisma.refreshToken.create({
       data: {
         userId: user.id,
