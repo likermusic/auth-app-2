@@ -10,9 +10,14 @@ import cookieParser from "cookie-parser";
 const app = express();
 const prisma = new PrismaClient();
 
+import passport from "passport";
+import GoogleStrategy from "passport-google-oauth20";
+import { profile } from "console";
+
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(passport.initialize());
 
 const jwt_secret = process.env.JWT_SECRET;
 const jwt_refresh_secret = process.env.JWT_REFRESH_SECRET;
@@ -341,4 +346,169 @@ app.get("/api/refresh-token", async (req, resp) => {
   });
 });
 
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      // clientID: "fdfdfd",
+      // clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientSecret: "dasdasd",
+
+      callbackURL: "http://localhost:4000/api/auth-google/callback",
+    },
+    async (_accessToken, _refreshToken, profile, done) => {
+      try {
+        if (!profile.id || !profile.emails[0].value)
+          throw new Error("Fail Google auth");
+
+        let user = await prisma.user.findUnique({
+          where: { googleId: profile.id },
+        });
+
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              googleId: profile.id,
+              email: profile.emails[0].value,
+            },
+          });
+        }
+
+        const tokens = generateTokens(user.id, user.email);
+        return done(null, { user, tokens });
+      } catch (error) {
+        return done(error, null);
+      }
+    },
+  ),
+);
+
+// app.get(
+//   "/api/auth-google/callback",
+//   passport.authenticate("google", {
+//     // failureRedirect: process.env.FRONTEND_URL,
+//     failureRedirect: `${process.env.FRONTEND_URL}/signup?error=auth_failed`,
+//     session: false,
+//   }),
+//   async (req, resp) => {
+//     try {
+//       const { user, tokens } = req.user;
+//       await prisma.refreshToken.deleteMany({
+//         where: { userId: user.id },
+//       });
+
+//       await prisma.refreshToken.create({
+//         data: {
+//           userId: user.id,
+//           refreshToken: tokens.refreshToken,
+//           expiresAt: new Date(
+//             Date.now() + tokens_expiration_time.date_refresh_token_format,
+//           ),
+//         },
+//       });
+
+//       return resp
+//         .cookie("token", tokens.token, {
+//           httpOnly: true,
+//           secure: true,
+//           sameSite: true,
+//           maxAge: tokens_expiration_time.date_access_token_format,
+//         })
+//         .cookie("refreshToken", tokens.refreshToken, {
+//           httpOnly: true,
+//           secure: true,
+//           sameSite: true,
+//           maxAge: tokens_expiration_time.date_refresh_token_format,
+//         })
+//         .status(201)
+//         .redirect(process.env.FRONTEND_URL);
+//       // .json({ user: { id: user.id, email: user.email } });
+//     } catch (error) {
+//       // return resp.status(401).redirect(`${process.env.FRONTEND_URL}/signup`);
+//       return resp.redirect(
+//         `${process.env.FRONTEND_URL}/signup?error=server_error`,
+//       );
+//     }
+//   },
+// );
+
+app.get(
+  "/api/auth-google/callback",
+  (req, res, next) => {
+    passport.authenticate("google", { session: false }, (err, user, info) => {
+      if (err) {
+        console.log("Authentication error:", err);
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/signin?google_auth_error=true`,
+        );
+      }
+      if (!user) {
+        console.log("Authentication failed:", info);
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/signin?google_auth_error=true"}`,
+        );
+      }
+
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
+  async (req, resp) => {
+    try {
+      const { user, tokens } = req.user;
+
+      await prisma.refreshToken.deleteMany({
+        where: { userId: user.id },
+      });
+
+      await prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          refreshToken: tokens.refreshToken,
+          expiresAt: new Date(
+            Date.now() + tokens_expiration_time.date_refresh_token_format,
+          ),
+        },
+      });
+
+      return resp
+        .cookie("token", tokens.token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+          maxAge: tokens_expiration_time.date_access_token_format,
+        })
+        .cookie("refreshToken", tokens.refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+          maxAge: tokens_expiration_time.date_refresh_token_format,
+        })
+        .redirect(process.env.FRONTEND_URL);
+    } catch (error) {
+      console.log("Callback processing error:", error);
+      return resp.redirect(
+        `${process.env.FRONTEND_URL}/signin?google_auth_error=true`,
+      );
+    }
+  },
+);
+
+app.get(
+  "/api/auth-google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  }),
+);
+
 app.listen(4000, () => console.log("Server started"));
+// http://localhost:4000/api/auth-google/callback
