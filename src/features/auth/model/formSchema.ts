@@ -20,14 +20,18 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain small characters.")
   .regex(/[0-9]/, "Password must contain numeric characters.");
 
+const emailSchema = z
+  .string()
+  .email()
+  .min(
+    formSchemaConst.emailMin,
+    `Email must be at least ${formSchemaConst.emailMin} characters.`,
+  );
+
+export const emailFormSchema = z.object({ email: emailSchema });
+
 const BaseFormSchema = z.object({
-  email: z
-    .string()
-    .email()
-    .min(
-      formSchemaConst.emailMin,
-      `Email must be at least ${formSchemaConst.emailMin} characters.`,
-    ),
+  email: emailSchema,
   password: passwordSchema,
 });
 

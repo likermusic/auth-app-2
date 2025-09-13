@@ -4,7 +4,6 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { useState } from "react";
 import cookieParser from "cookie-parser";
 
 const app = express();
@@ -12,7 +11,7 @@ const prisma = new PrismaClient();
 
 import passport from "passport";
 import GoogleStrategy from "passport-google-oauth20";
-import { profile } from "console";
+import nodemailer from "nodemailer";
 
 app.use(express.json());
 app.use(cookieParser());
@@ -25,6 +24,7 @@ const jwt_refresh_secret = process.env.JWT_REFRESH_SECRET;
 const tokens_expiration_time = {
   jwt_access_token_format: "1h",
   jwt_refresh_token_format: "7d",
+  jwt_reset_token_format: "10m",
   date_access_token_format: 60 * 60 * 1000,
   date_refresh_token_format: 7 * 24 * 60 * 60 * 1000,
 };
@@ -49,14 +49,20 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain small characters.")
   .regex(/[0-9]/, "Password must contain numeric characters.");
 
+const emailSchema = z
+  .string()
+  .email()
+  .min(
+    formSchemaConst.emailMin,
+    `Email must be at least ${formSchemaConst.emailMin} characters.`,
+  );
+
+const EmailFormSchema = z.object({
+  email: emailSchema,
+});
+
 const BaseFormSchema = z.object({
-  email: z
-    .string()
-    .email()
-    .min(
-      formSchemaConst.emailMin,
-      `Email must be at least ${formSchemaConst.emailMin} characters.`,
-    ),
+  email: emailSchema,
   password: passwordSchema,
 });
 
@@ -359,8 +365,8 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       // clientID: "fdfdfd",
-      // clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      clientSecret: "dasdasd",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // clientSecret: "dasdasd",
 
       callbackURL: "http://localhost:4000/api/auth-google/callback",
     },
@@ -509,6 +515,42 @@ app.get(
     session: false,
   }),
 );
+
+const sendEmail = async (to, subject, body) => {};
+
+app.post("/api/forgot-password", async (req, resp) => {
+  const result = EmailFormSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ errors: result.error.flatten().fieldErrors });
+  }
+
+  const { email } = result.data;
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    // !user || user.googleId
+    if (!user) {
+      return resp.status(404).json({ error: "User not found" });
+    }
+
+    const resetToken = jwt.sign({ id: user.id, emai: user.email }, jwt_secret, {
+      expiresIn: tokens_expiration_time.jwt_reset_token_format,
+    });
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    await sendEmail(
+      email,
+      "Восстановление пароля",
+      `<p>Перейдите по ссылке, чтобы сбросить пароль: <a href="${resetLink}">Сбросить пароль</a></p>`,
+    );
+
+    return resp.status(200).json({ message: "Password recovery link sent" });
+  } catch (error) {
+    return resp.status(500).json({ error: "Server error" });
+  }
+});
 
 app.listen(4000, () => console.log("Server started"));
 // http://localhost:4000/api/auth-google/callback

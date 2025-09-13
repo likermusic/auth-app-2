@@ -28,6 +28,7 @@ import { useFormLayout } from "../../model/useFormLayout";
 import { Spinner } from "@/shared/ui/spinner";
 import { GoogleButton } from "@/shared/ui/google-button/google-button";
 import { authApi } from "@/entities/user";
+import { ROUTES } from "@/shared/router/constants";
 
 interface FormLayoutProps extends BaseFormLayoutProps {
   buttonTitle: string;
@@ -38,6 +39,7 @@ interface FormLayoutProps extends BaseFormLayoutProps {
     to: string;
     title: string;
   };
+  forgotPassword?: boolean;
 }
 
 export const FormLayout = ({
@@ -47,6 +49,7 @@ export const FormLayout = ({
   link,
   schema,
   serverValidationErrors,
+  forgotPassword,
 }: FormLayoutProps) => {
   const {
     form,
@@ -75,7 +78,7 @@ export const FormLayout = ({
             render={({ field }) => (
               <FormItem className="group">
                 <FormLabel className="text-zinc-500 group-focus-within:text-zinc-50">
-                  Login
+                  Email
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -171,11 +174,22 @@ export const FormLayout = ({
             {isSubmitting ? <Spinner size={"small"} /> : buttonTitle}
           </Button>
         </form>
-        <Button variant={"link"} className="text-[#5a7ef5] block m-auto">
+        <Button
+          variant={"ghost"}
+          className="text-[#5a7ef5] block m-auto font-normal"
+        >
           <Link to={link.to}>{link.title}</Link>
         </Button>
-
         <GoogleButton onClick={authApi.authGoogle} />
+
+        {forgotPassword && (
+          <Button
+            variant={"link"}
+            className="text-[#5a7ef5] block m-auto font-normal"
+          >
+            <Link to={ROUTES.FORGOT_PASSWORD}>Forgot password?</Link>
+          </Button>
+        )}
       </Form>
     </div>
   );

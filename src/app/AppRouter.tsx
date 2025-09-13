@@ -11,6 +11,7 @@ import { AppLayout } from "./AppLayout";
 import { authApi } from "@/entities/user";
 import { useState } from "react";
 import { About } from "@/pages/about";
+import { ForgotPasswrod } from "@/pages/forgot-password";
 
 const router = createBrowserRouter([
   {
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
   {
     path: ROUTES.SIGNUP,
     element: <Signup />,
+  },
+  {
+    path: ROUTES.FORGOT_PASSWORD,
+    element: <ForgotPasswrod />,
   },
 ]);
 
