@@ -61,6 +61,10 @@ const EmailFormSchema = z.object({
   email: emailSchema,
 });
 
+const PasswordFormSchema = z.object({
+  password: passwordSchema,
+});
+
 const BaseFormSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
@@ -539,6 +543,9 @@ const sendEmail = async (to, subject, html) => {
 };
 
 app.post("/api/forgot-password", async (req, resp) => {
+  // return resp
+  //   .status(201)
+  //   .json({ message: "Password is refreshed successfully" });
   const result = EmailFormSchema.safeParse(req.body);
   if (!result.success) {
     return resp
@@ -556,9 +563,13 @@ app.post("/api/forgot-password", async (req, resp) => {
       return resp.status(404).json({ error: "User not found" });
     }
 
-    const resetToken = jwt.sign({ id: user.id, emai: user.email }, jwt_secret, {
-      expiresIn: tokens_expiration_time.jwt_reset_token_format,
-    });
+    const resetToken = jwt.sign(
+      { id: user.id, email: user.email },
+      jwt_secret,
+      {
+        expiresIn: tokens_expiration_time.jwt_reset_token_format,
+      },
+    );
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     await sendEmail(
@@ -573,5 +584,55 @@ app.post("/api/forgot-password", async (req, resp) => {
   }
 });
 
+app.post("/api/reset-password", async (req, resp) => {
+  // return resp
+  //   .status(201)
+  //   .json({ message: "Password is refreshed successfully" });
+  const result = PasswordFormSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return resp
+      .status(400)
+      .json({ errors: result.error.flatten().fieldErrors });
+  }
+
+  const { password, token } = req.body;
+
+  if (!token) {
+    return resp.status(401).json({ error: "Token is not found" });
+  }
+
+  jwt.verify(token, jwt_secret, async (err, parsed_user) => {
+    if (err) {
+      return resp.status(401).json({ error: "Invalid token" });
+    }
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: parsed_user.id,
+          email: parsed_user.email,
+        },
+      });
+
+      if (!user) {
+        return resp.status(404).json({ error: "User is not found" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await prisma.user.update({
+        where: { id: user.id, email: user.email },
+        data: { password: hashedPassword },
+      });
+
+      return resp
+        .status(201)
+        .json({ message: "Password is refreshed successfully" });
+    } catch (error) {
+      return resp.status(500).json({ error: "Server error" });
+    }
+  });
+});
 app.listen(4000, () => console.log("Server started"));
 // http://localhost:4000/api/auth-google/callback

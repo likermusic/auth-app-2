@@ -12,6 +12,7 @@ import { authApi } from "@/entities/user";
 import { useState } from "react";
 import { About } from "@/pages/about";
 import { ForgotPasswrod } from "@/pages/forgot-password";
+import { ResetPassword } from "@/pages/reset-password";
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
   {
     path: ROUTES.FORGOT_PASSWORD,
     element: <ForgotPasswrod />,
+  },
+  {
+    path: ROUTES.RESET_PASSWORD,
+    element: <ResetPassword />,
   },
 ]);
 

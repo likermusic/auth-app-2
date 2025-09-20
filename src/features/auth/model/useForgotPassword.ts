@@ -29,6 +29,7 @@ export const useForgotPassword = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
+      if (!data.email) throw new Error("Can not find email");
       await authApi.forgotPassword(data);
       setButtonDisabled(true);
       toast.success("We sent the link on your email to reset password");

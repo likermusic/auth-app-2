@@ -1,6 +1,6 @@
 import type { RouteNames } from "@/shared/types";
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { ValidationFormFieldsTypes } from "../types";
 import type { SigninFormSchema, SignupFormSchema } from "./formSchema";
 import type { z } from "zod";
@@ -9,7 +9,6 @@ import { authApi } from "@/entities/user";
 import { ROUTES } from "@/shared/router/constants";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
 
 // type Routes = `${RouteNames}`; // 'signin' | 'signup'
 
@@ -21,6 +20,22 @@ export const useAuth = (ROUTE_VALUE: `${RouteNames}`) => {
   // type FormSchema = typeof ROUTE_VALUE extends RouteNames.Signin
   //   ? typeof SigninFormSchema
   //   : typeof ROUTE_VALUE extends RouteNames.Signup
+
+  const location = useLocation();
+  useEffect(() => {
+    if (
+      location.state?.isPasswordReset &&
+      location.state.isPasswordReset === true
+    ) {
+      toast.success("Password is updated. Sign in with a new password");
+      const newState = { ...location.state };
+      delete newState.isPasswordReset;
+      navigate(location.pathname, {
+        replace: true,
+        state: Object.keys(newState).length > 0 ? newState : undefined,
+      });
+    }
+  }, []);
 
   const authHandler = async (
     data: z.infer<typeof SigninFormSchema> | z.infer<typeof SignupFormSchema>,
