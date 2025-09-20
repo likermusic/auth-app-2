@@ -7,6 +7,9 @@ import { emailFormSchema } from "./formSchema";
 import { authApi } from "@/entities/user";
 import { toast } from "sonner";
 
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/shared/router/constants";
+
 export const useForgotPassword = () => {
   type FormData = z.infer<typeof emailFormSchema>;
   const form = useForm<FormData>({
@@ -17,6 +20,9 @@ export const useForgotPassword = () => {
     },
   });
 
+  const navigate = useNavigate();
+  const [buttonDisabled, setButtonDisabled] = useState(false);
+
   const {
     formState: { isValid, isDirty, isSubmitting },
   } = form;
@@ -24,12 +30,15 @@ export const useForgotPassword = () => {
   const onSubmit = async (data: FormData) => {
     try {
       await authApi.forgotPassword(data);
+      setButtonDisabled(true);
       toast.success("We sent the link on your email to reset password");
-      // navigate(ROUTES.HOME);
+      setTimeout(() => {
+        navigate(ROUTES.SIGNIN);
+      }, 4000);
     } catch (err) {
       toast.error("Can not find your email");
     }
   };
 
-  return { form, onSubmit, isDirty, isValid, isSubmitting };
+  return { form, onSubmit, isDirty, isValid, isSubmitting, buttonDisabled };
 };

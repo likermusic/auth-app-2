@@ -516,12 +516,34 @@ app.get(
   }),
 );
 
-const sendEmail = async (to, subject, body) => {};
+const sendEmail = async (to, subject, html) => {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+
+  transporter.sendMail({
+    from: `Support <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+  });
+};
 
 app.post("/api/forgot-password", async (req, resp) => {
   const result = EmailFormSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({ errors: result.error.flatten().fieldErrors });
+    return resp
+      .status(400)
+      .json({ errors: result.error.flatten().fieldErrors });
   }
 
   const { email } = result.data;
@@ -530,8 +552,7 @@ app.post("/api/forgot-password", async (req, resp) => {
       where: { email },
     });
 
-    // !user || user.googleId
-    if (!user) {
+    if (!user || user.googleId) {
       return resp.status(404).json({ error: "User not found" });
     }
 
